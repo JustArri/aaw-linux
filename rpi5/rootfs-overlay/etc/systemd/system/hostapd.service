@@ -1,0 +1,16 @@
+[Unit]
+Description=AAW Wi-Fi Access Point
+Wants=systemd-networkd.service
+After=systemd-networkd.service
+BindsTo=sys-subsystem-net-devices-wlan0.device
+After=sys-subsystem-net-devices-wlan0.device
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/hostapd /etc/hostapd.conf
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+

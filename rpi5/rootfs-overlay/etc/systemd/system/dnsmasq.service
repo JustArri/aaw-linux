@@ -1,0 +1,15 @@
+[Unit]
+Description=AAW Wi-Fi DHCP and DNS Server
+Wants=systemd-networkd.service hostapd.service
+After=systemd-networkd.service hostapd.service
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --keep-in-foreground --conf-file=/etc/dnsmasq.conf
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+

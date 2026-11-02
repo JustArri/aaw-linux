@@ -1,0 +1,7 @@
+/aaw/
+/buildroot/
+/buildroot-*.tar.*
+/output/
+/dl/
+/.config
+

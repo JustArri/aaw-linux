@@ -1,0 +1,11 @@
+[Unit]
+Description=Grow AAW root filesystem to fill the SD card
+After=local-fs.target
+Before=aaw.service
+ConditionPathExists=!/var/lib/aaw/.rootfs-expanded
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /usr/libexec/aaw-grow-rootfs
+RemainAfterExit=yes
+TimeoutStartSec=infinity

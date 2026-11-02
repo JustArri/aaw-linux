@@ -1,0 +1,14 @@
+[Match]
+Name=wlan0
+
+[Link]
+RequiredForOnline=no
+
+[Network]
+Address=10.0.0.1/24
+ConfigureWithoutCarrier=yes
+LinkLocalAddressing=no
+IPv6AcceptRA=no
+IPForward=ipv4
+IPMasquerade=ipv4
+

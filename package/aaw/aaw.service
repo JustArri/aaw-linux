@@ -1,0 +1,27 @@
+[Unit]
+Description=Arri's Audio Workstation
+Requires=pipewire.service wireplumber.service
+After=pipewire.service wireplumber.service network.target
+
+[Service]
+Type=simple
+User=aaw
+Group=aaw
+SupplementaryGroups=audio pipewire
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+WorkingDirectory=/var/lib/aaw
+Environment=PIPEWIRE_RUNTIME_DIR=/run/pipewire
+Environment=RUST_LOG=info
+ExecStart=/usr/bin/aaw
+Restart=on-failure
+RestartSec=2
+
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,32 @@
+#!/bin/sh
+
+set -eu
+
+marker=/var/lib/aaw/.rootfs-expanded
+
+if [ -e "$marker" ]; then
+	exit 0
+fi
+
+root_device="$(sed -n 's/.*root=\([^ ]*\).*/\1/p' /proc/cmdline)"
+
+case "$root_device" in
+	/dev/mmcblk*p[0-9]*)
+		disk="${root_device%p*}"
+		partition="${root_device##*p}"
+		;;
+	*)
+		echo "Unsupported root device: $root_device" >&2
+		exit 1
+		;;
+esac
+
+echo "Growing root partition $root_device to fill $disk"
+parted --script "$disk" resizepart "$partition" 100%
+partprobe "$disk"
+udevadm settle
+resize2fs "$root_device"
+
+mkdir -p /var/lib/aaw/soundfonts /var/lib/aaw/sfz
+chown aaw:aaw /var/lib/aaw/soundfonts /var/lib/aaw/sfz
+touch "$marker"

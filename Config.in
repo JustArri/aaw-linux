@@ -1,0 +1,4 @@
+menu "AAW packages"
+source "$BR2_EXTERNAL_AAW_PATH/package/aaw/Config.in"
+endmenu
+
