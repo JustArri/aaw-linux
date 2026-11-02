@@ -163,7 +163,7 @@ cd "$AAW_LINUX_DIR"
 
 ```sh
 make -C output/rpi5 -j"$(nproc)"
-ls -lh output/rpi5/images/sdcard.img
+ls -lh output/rpi5/images/disk.img
 ```
 
 The initial build downloads and compiles the complete Linux toolchain and may
@@ -187,7 +187,7 @@ Using the wrong device destroys its contents.
 ```sh
 sudo umount /dev/DEVICE_PARTITION_1 /dev/DEVICE_PARTITION_2
 sudo dd \
-    if=output/rpi5/images/sdcard.img \
+    if=output/rpi5/images/disk.img \
     of=/dev/WHOLE_DEVICE \
     bs=16M \
     conv=fsync \
@@ -199,8 +199,8 @@ Optionally verify the written bytes:
 
 ```sh
 sudo cmp \
-    -n "$(stat -c %s output/rpi5/images/sdcard.img)" \
-    output/rpi5/images/sdcard.img \
+    -n "$(stat -c %s output/rpi5/images/disk.img)" \
+    output/rpi5/images/disk.img \
     /dev/WHOLE_DEVICE
 ```
 
@@ -264,7 +264,7 @@ Replace `aaw.home.arpa` with the appliance's Ethernet address when the hostname
 is not available. Project and asset data under `/var/lib/aaw` are not replaced
 by this procedure.
 
-Rebuild and write the generated disk image (`sdcard.img`) again when changing
+Rebuild and write the generated disk image (`disk.img`) again when changing
 Buildroot packages, the kernel, system services, root filesystem overlays,
 PipeWire/WirePlumber policy, or other operating-system configuration.
 

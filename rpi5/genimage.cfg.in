@@ -8,7 +8,7 @@ image boot.vfat {
 	size = 32M
 }
 
-image sdcard.img {
+image disk.img {
 	hdimage {
 		partition-table-type = "mbr"
 		disk-signature = 0x41574157
