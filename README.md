@@ -1,4 +1,4 @@
-# AAW Linux for Raspberry Pi
+# AAW Linux
 
 This repository is a minimal Buildroot external tree for building a dedicated
 Arri's Audio Workstation appliance image. It currently supports Raspberry Pi 5;
@@ -30,8 +30,8 @@ Clone this repository, then clone AAW—including its native submodules—into t
 reserved `aaw/` directory:
 
 ```sh
-git clone <this-repository-url> aaw-linux-rpi
-cd aaw-linux-rpi
+git clone https://github.com/JustArri/aaw-linux
+cd aaw-linux
 git clone --recurse-submodules https://github.com/JustArri/aaw.git aaw
 ```
 
@@ -55,6 +55,65 @@ Change the Wi-Fi country, SSID, and passphrase in
 `rpi5/rootfs-overlay/etc/hostapd.conf`. Change the root password by editing
 `BR2_TARGET_GENERIC_ROOT_PASSWD` in `rpi5/defconfig`. Do this before exposing
 the appliance to an untrusted network.
+
+Open the Wi-Fi configuration in your preferred editor:
+
+```sh
+${EDITOR:-nano} rpi5/rootfs-overlay/etc/hostapd.conf
+```
+
+Set `country_code` to the applicable two-letter ISO country code. Choose the
+SSID freely; a WPA2 passphrase must contain between 8 and 63 characters. For
+example, these commands select the United States, rename the network, and set a
+new development password:
+
+```sh
+sed -i \
+    -e 's/^country_code=.*/country_code=US/' \
+    -e 's/^ssid=.*/ssid=My-AAW/' \
+    -e 's/^wpa_passphrase=.*/wpa_passphrase=choose-a-strong-password/' \
+    rpi5/rootfs-overlay/etc/hostapd.conf
+```
+
+Verify the resulting non-comment settings:
+
+```sh
+grep -E '^(country_code|ssid|wpa_passphrase)=' \
+    rpi5/rootfs-overlay/etc/hostapd.conf
+```
+
+The root password can be changed directly in the tracked defconfig:
+
+```sh
+${EDITOR:-nano} rpi5/defconfig
+grep '^BR2_TARGET_GENERIC_ROOT_PASSWD=' rpi5/defconfig
+```
+
+Alternatively, after creating the Buildroot output directory in the next
+section, open Buildroot's configuration interface:
+
+```sh
+make -C output/rpi5 menuconfig
+```
+
+Navigate to:
+
+```text
+System configuration  --->
+    Root password
+```
+
+Exit and save the configuration, then export the result back to the tracked
+Raspberry Pi 5 defconfig:
+
+```sh
+make -C output/rpi5 savedefconfig \
+    BR2_DEFCONFIG="$PWD/rpi5/defconfig"
+```
+
+Review `rpi5/defconfig` before committing it. The password is stored in this
+configuration, so do not publish a private production password in a public
+repository.
 
 ## Configure Buildroot
 
@@ -107,16 +166,26 @@ ls -lh output/rpi5/images/sdcard.img
 The initial build downloads and compiles the complete Linux toolchain and may
 take a long time.
 
-## Write an SD card
+## Write the image to a storage device
 
-Identify the whole SD-card device carefully. The following example uses
-`/dev/mmcblk0`; using the wrong device destroys its contents.
+The image can be written to any storage device that the Raspberry Pi can boot
+from, including an SD card, USB storage, or an NVMe device. Identify the
+destination and its mounted partitions:
 
 ```sh
-sudo umount /dev/mmcblk0p1 /dev/mmcblk0p2 2>/dev/null || true
+lsblk -p -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,MODEL
+```
+
+Replace the deliberately invalid placeholders below with the actual partition
+and whole-device paths. Unmount every mounted partition belonging to the
+destination, then write to the whole device—not to one of its partitions.
+Using the wrong device destroys its contents.
+
+```sh
+sudo umount /dev/DEVICE_PARTITION_1 /dev/DEVICE_PARTITION_2
 sudo dd \
     if=output/rpi5/images/sdcard.img \
-    of=/dev/mmcblk0 \
+    of=/dev/WHOLE_DEVICE \
     bs=16M \
     conv=fsync \
     status=progress
@@ -129,12 +198,13 @@ Optionally verify the written bytes:
 sudo cmp \
     -n "$(stat -c %s output/rpi5/images/sdcard.img)" \
     output/rpi5/images/sdcard.img \
-    /dev/mmcblk0
+    /dev/WHOLE_DEVICE
 ```
 
-On first boot, the root partition expands to fill the card. Ethernet obtains an
-IPv4 address through DHCP. The device also provides the `AAW` Wi-Fi network and
-is reachable from that network at `http://aaw.home.arpa/` or `http://10.0.0.1/`.
+On first boot, the root partition expands to fill the storage device. Ethernet
+obtains an IPv4 address through DHCP. The device also provides the `AAW` Wi-Fi
+network and is reachable from that network at `http://aaw.home.arpa/` or
+`http://10.0.0.1/`.
 
 ## Rebuild after changing AAW
 
@@ -150,7 +220,7 @@ make -C output/rpi5 aaw-rsync
 make -C output/rpi5 aaw-rebuild -j"$(nproc)"
 ```
 
-Run a normal top-level build when you need an updated SD-card image:
+Run a normal top-level build when you need an updated disk image:
 
 ```sh
 make -C output/rpi5 -j"$(nproc)"
@@ -191,7 +261,7 @@ Replace `aaw.home.arpa` with the appliance's Ethernet address when the hostname
 is not available. Project and asset data under `/var/lib/aaw` are not replaced
 by this procedure.
 
-Rebuild and reflash `sdcard.img` instead when changing Buildroot packages, the
-kernel, system services, root filesystem overlays, PipeWire/WirePlumber policy,
-or other operating-system configuration.
+Rebuild and write the generated disk image (`sdcard.img`) again when changing
+Buildroot packages, the kernel, system services, root filesystem overlays,
+PipeWire/WirePlumber policy, or other operating-system configuration.
 

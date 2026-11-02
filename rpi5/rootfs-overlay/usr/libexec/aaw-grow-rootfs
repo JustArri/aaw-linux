@@ -8,18 +8,32 @@ if [ -e "$marker" ]; then
 	exit 0
 fi
 
-root_device="$(sed -n 's/.*root=\([^ ]*\).*/\1/p' /proc/cmdline)"
+root_spec="$(sed -n 's/.*root=\([^ ]*\).*/\1/p' /proc/cmdline)"
 
-case "$root_device" in
-	/dev/mmcblk*p[0-9]*)
-		disk="${root_device%p*}"
-		partition="${root_device##*p}"
+case "$root_spec" in
+	PARTUUID=*)
+		root_device="$(readlink -f "/dev/disk/by-partuuid/${root_spec#PARTUUID=}")"
+		;;
+	/dev/*)
+		root_device="$root_spec"
 		;;
 	*)
-		echo "Unsupported root device: $root_device" >&2
+		echo "Unsupported root device specification: $root_spec" >&2
 		exit 1
 		;;
 esac
+
+block_name="${root_device##*/}"
+sysfs_partition="/sys/class/block/${block_name}"
+
+if [ ! -r "${sysfs_partition}/partition" ]; then
+	echo "Root device is not a partition: $root_device" >&2
+	exit 1
+fi
+
+partition="$(cat "${sysfs_partition}/partition")"
+disk_name="$(basename "$(readlink -f "${sysfs_partition}/..")")"
+disk="/dev/${disk_name}"
 
 echo "Growing root partition $root_device to fill $disk"
 parted --script "$disk" resizepart "$partition" 100%
