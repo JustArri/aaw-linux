@@ -1,0 +1,2 @@
+root=PARTUUID=41574157-02 rootwait console=tty1 console=ttyAMA10,115200
+
