@@ -141,19 +141,22 @@ cd ../..
 ## Prepare Rust dependencies
 
 Buildroot builds Cargo packages offline. Copy the local AAW tree into its build
-directory and vendor the locked dependency set:
+directory, install Buildroot's host Rust toolchain, and vendor the locked
+dependency set:
 
 ```sh
 make -C output/rpi5 aaw-dirclean
 make -C output/rpi5 source -j"$(nproc)"
 make -C output/rpi5 aaw-rsync
+make -C output/rpi5 host-rustc -j"$(nproc)"
 
+AAW_LINUX_DIR="$PWD"
 mkdir -p output/rpi5/build/aaw-0.1.0/.cargo
 cd output/rpi5/build/aaw-0.1.0
-CARGO_HOME="$OLDPWD/buildroot/dl/br-cargo-home" \
-    "$OLDPWD/output/rpi5/host/bin/cargo" \
+CARGO_HOME="$AAW_LINUX_DIR/buildroot/dl/br-cargo-home" \
+    "$AAW_LINUX_DIR/output/rpi5/host/bin/cargo" \
     vendor --locked VENDOR > .cargo/config.toml
-cd "$OLDPWD"
+cd "$AAW_LINUX_DIR"
 ```
 
 ## Build the image
